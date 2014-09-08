@@ -1,0 +1,95 @@
+#!/usr/bin/perl
+
+use Fcntl ':mode';
+use Time::localtime;
+
+$dir=$ARGV[1];
+
+
+chdir($dir) || die "\nCould not change directory\n";
+opendir(R,"$dir") || die "\nCould not open dir $dir\n";
+while ($filename=readdir(R))
+{
+
+         if (($filename =~ /^\.$/) || ($filename =~ /^\.\.$/) ||($filename =~ /\.swp$/) || ($filename =~ /^\.[a-z0-1A-Z]*/)) {
+           next;
+        }
+        $mfilename=$filename;
+        if ( -d $filename ) {
+          $fileper=d;
+          $mfilename.= "/";
+        }
+        else {
+          $fileper="-";
+        }
+       if (($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,$atime,$mtime,$ctime,$blksize,$blocks) = stat($filename)) {
+          $user = getpwuid($uid);
+          $group = getgrgid($gid);
+
+        $permissions = sprintf "%04o", S_IMODE($mode);
+
+        @pm=split(//,$permissions);
+        $once=0;
+        for(my $i=1; $i<=3;$i++){
+
+         if ($pm[$i] == 3) {
+             $fileper.="-wx";
+                  if (( ! -d $filename) && ($once==0)) {
+                 $mfilename.="*";
+                 $once++;
+              }
+         }
+         if ($pm[$i] == 5) {
+             $fileper.="r-x";
+                  if (( ! -d $filename) && ($once==0)) {
+                 $mfilename.="*";
+                 $once++;
+              }
+         }
+     
+              
+         if ($pm[$i] == 1) {
+             $fileper.="--x";
+                  if (( ! -d $filename) && ($once==0)) {
+                 $mfilename.="*";
+                 $once++;
+              }
+         }
+         if($pm[$i] == 2) {
+              $fileper.="-w-";
+         }
+         if($pm[$i] == 4) {
+              $fileper.="r--";
+         }
+         if($pm[$i] == 6) {
+              $fileper.="rw-";
+         }
+         if($pm[$i] == 0){
+              $fileper.="---";
+         }
+         if($pm[$i] == 7){
+              $fileper.="rwx";
+              if (( ! -d $filename) && ($once==0)) {
+                 $mfilename.="*";
+                 $once++;
+              }
+         }
+        }
+
+
+      @tmtime=split(/ /,ctime($mtime));
+      @rtime=split(/:/,$tmtime[3]);
+      $tm=localtime;
+      #my($year)=($tm->year()+1900);
+      $year=2014;
+      if ("$year" == "$tmtime[4]") {
+          $ftime="$tmtime[1] $tmtime[2] $rtime[0]:$rtime[1]";
+      } else {
+          $ftime="$tmtime[1] $tmtime[2] $tmtime[4]";
+      }
+      }
+print "$ino  $fileper $nlink   $user    $group    $size   $ftime   $mfilename\n";
+}
+closedir(R);
+
+
